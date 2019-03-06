@@ -1,0 +1,8 @@
+{
+    "serviceName": "Bridge Protocol Integration Service",
+    "port": 7500,
+    "passportFile": "",
+    "passportPassphrase": "",
+    "securityHeaderValue": "securityvalue",
+    "bridgeApiBaseUrl": "https://api.bridgeprotocol.io/"
+}
