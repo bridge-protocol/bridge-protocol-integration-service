@@ -1,6 +1,6 @@
 {
   "name": "@bridge-protocol/bridge-protocol-integration-service",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Bridge Protocol Integration Service",
   "main": "./src/server.js",
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/bridge-protocol/integration-service#readme",
   "dependencies": {
-    "@bridge-protocol/bridge-protocol-js": "^1.1.0",
+    "@bridge-protocol/bridge-protocol-js": "^1.1.1",
     "express": "^4.16.3",
     "nodemon": "^1.18.3",
     "node-fetch": "^2.3.0"
