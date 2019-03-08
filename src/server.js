@@ -14,6 +14,7 @@ var _profileHelper = null;
 var _claimHelper = null;
 var _authHelper = null;
 var _applicationHelper = null;
+var _verificationPartnerHelper = null;
 
 async function Init()
 {
@@ -68,7 +69,7 @@ function _initializeService(){
         .post(post_passportRequestLogin);
 
     _app.route('/passport/verifylogin')
-        .post(post_passportVerifyLogin);    
+        .post(post_passportVerifyLogin);
 
     _app.route('/application/setstatus')
         .post(post_setStatus);
@@ -114,6 +115,7 @@ async function _initializeBridgeProtocol(){
     _profileHelper = new _bridge.Profile(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _claimHelper = new _bridge.Claim(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _applicationHelper = new _bridge.Application(_config.bridgeApiBaseUrl, _passport, _passphrase);
+    _verificationPartnerHelper = new _bridge.VerificationPartner(_config.bridgeApiBaseUrl, _passport, _passphrase);
 
     //Make sure we can access the public API
     let details = await _passportHelper.getDetails(_passport.id);
@@ -276,13 +278,38 @@ async function post_passportVerifyLogin(req,res){
         }
 
         verify = await _authHelper.verifyPassportLoginChallengeResponse(req.body.response, req.body.token, req.body.claimTypes);
+
+        //Call the bridge network and find out the details of the passport that logged in
         verify.passportDetails = await _passportHelper.getDetails(verify.passportId);
+
+        //Call the bridge network to find out about the current verification partners on the network
+        //And make sure all of the claims that had a valid signature were also from known verification providers
+        verify.unknownSignerClaimTypes = [];
+
+        let verificationPartners = await _verificationPartnerHelper.getAllPartners();
+        for(let i=0; i<verify.claims.length; i++){
+            let partner = getPartnerById(verificationPartners, verify.claims[i].signedById);
+            if(!partner)
+            {
+                verify.unknownSignerClaimTypes.push(verify.claims[i].claimTypeId);
+            }
+        }
     }
     catch(err){
         error = _getError(err.message);
     }
     
     res.json({ verify, error });
+}
+
+function getPartnerById(verificationPartners, id){
+    for(let i=0; i<verificationPartners.length; i++){
+        if(verificationPartners[i].id == id){
+            return verificationPartners[i];
+        }
+    }
+
+    return null;
 }
 
 async function post_setStatus(req, res, next){
