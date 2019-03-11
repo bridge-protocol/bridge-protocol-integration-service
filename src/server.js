@@ -78,6 +78,12 @@ function _initializeService(){
     _app.route('/application/addclaims')
         .post(post_addClaims);
 
+    _app.route('/blockchain/transactioncomplete')
+        .post(post_getBlockchainTransactionComplete);
+
+    _app.route('/blockchain/transactiondetails')
+        .post(post_getBlockchainTransactionDetails);
+
     _app.listen(_config.port);
 
     console.log(_config.serviceName + ' listening on port: ' + _config.port);
@@ -374,8 +380,8 @@ async function post_addClaims(req, res, next){
     return res.json({status, error});
 }
 
-async function get_transactionComplete(req, res, next){
-    let status = false;
+async function post_getBlockchainTransactionComplete(req, res, next){
+    let complete = false;
     let error = null;
     try{
         if(!_verifyHeader(req)){
@@ -390,18 +396,18 @@ async function get_transactionComplete(req, res, next){
         if(!req.body.transactionId){
             throw new Error("Missing parameter: transactionId");
         }
-        let res = await blockchainHelper.checkTransactionComplete(req.body.network, req.body.transactionId);
+        let res = await _blockchainHelper.checkTransactionComplete(req.body.network, req.body.transactionId);
         if(res){
-            status = true;
+            complete = true;
         }
     }
     catch(err){
         error = _getError(err.message);
     }
-    return res.json({status, error});
+    return res.json({complete, error});
 }
 
-async function get_transactionInfo(req, res, next){
+async function post_getBlockchainTransactionDetails(req, res, next){
     let info = null;
     let error = null;
     try{
@@ -417,10 +423,8 @@ async function get_transactionInfo(req, res, next){
         if(!req.body.transactionId){
             throw new Error("Missing parameter: transactionId");
         }
-        let res = await blockchainHelper.checkTransactionComplete(req.body.network, req.body.transactionId);
-        if(res){
-            status = true;
-        }
+
+        info = await _blockchainHelper.getTransactionStatus(req.body.network, req.body.transactionId);
     }
     catch(err){
         error = _getError(err.message);
