@@ -15,6 +15,7 @@ var _claimHelper = null;
 var _authHelper = null;
 var _applicationHelper = null;
 var _verificationPartnerHelper = null;
+var _blockchainHelper = null;
 
 async function Init()
 {
@@ -77,6 +78,12 @@ function _initializeService(){
     _app.route('/application/addclaims')
         .post(post_addClaims);
 
+    _app.route('/blockchain/transactioncomplete')
+        .post(post_getBlockchainTransactionComplete);
+
+    _app.route('/blockchain/transactiondetails')
+        .post(post_getBlockchainTransactionDetails);
+
     _app.listen(_config.port);
 
     console.log(_config.serviceName + ' listening on port: ' + _config.port);
@@ -116,6 +123,7 @@ async function _initializeBridgeProtocol(){
     _claimHelper = new _bridge.Claim(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _applicationHelper = new _bridge.Application(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _verificationPartnerHelper = new _bridge.VerificationPartner(_config.bridgeApiBaseUrl, _passport, _passphrase);
+    _blockchainHelper = new _bridge.Blockchain(_config.bridgeApiBaseUrl, _passport, _passphrase);
 
     //Make sure we can access the public API
     let details = await _passportHelper.getDetails(_passport.id);
@@ -370,6 +378,58 @@ async function post_addClaims(req, res, next){
     }
 
     return res.json({status, error});
+}
+
+async function post_getBlockchainTransactionComplete(req, res, next){
+    let complete = false;
+    let error = null;
+    try{
+        if(!_verifyHeader(req)){
+            throw new Error("Bad or missing authorization.");
+        }
+        if(!req.body){
+            throw new Error("Message body was null.");
+        } 
+        if(!req.body.network){
+            throw new Error("Missing parameter: network");
+        }
+        if(!req.body.transactionId){
+            throw new Error("Missing parameter: transactionId");
+        }
+        let res = await _blockchainHelper.checkTransactionComplete(req.body.network, req.body.transactionId);
+        if(res){
+            complete = true;
+        }
+    }
+    catch(err){
+        error = _getError(err.message);
+    }
+    return res.json({complete, error});
+}
+
+async function post_getBlockchainTransactionDetails(req, res, next){
+    let info = null;
+    let error = null;
+    try{
+        if(!_verifyHeader(req)){
+            throw new Error("Bad or missing authorization.");
+        }
+        if(!req.body){
+            throw new Error("Message body was null.");
+        } 
+        if(!req.body.network){
+            throw new Error("Missing parameter: network");
+        }
+        if(!req.body.transactionId){
+            throw new Error("Missing parameter: transactionId");
+        }
+
+        info = await _blockchainHelper.getTransactionStatus(req.body.network, req.body.transactionId);
+    }
+    catch(err){
+        error = _getError(err.message);
+    }
+    return res.json({info, error});
 }
 
 Init();
