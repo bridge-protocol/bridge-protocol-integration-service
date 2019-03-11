@@ -15,6 +15,7 @@ var _claimHelper = null;
 var _authHelper = null;
 var _applicationHelper = null;
 var _verificationPartnerHelper = null;
+var _blockchainHelper = null;
 
 async function Init()
 {
@@ -116,6 +117,7 @@ async function _initializeBridgeProtocol(){
     _claimHelper = new _bridge.Claim(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _applicationHelper = new _bridge.Application(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _verificationPartnerHelper = new _bridge.VerificationPartner(_config.bridgeApiBaseUrl, _passport, _passphrase);
+    _blockchainHelper = new _bridge.Blockchain(_config.bridgeApiBaseUrl, _passport, _passphrase);
 
     //Make sure we can access the public API
     let details = await _passportHelper.getDetails(_passport.id);
@@ -370,6 +372,60 @@ async function post_addClaims(req, res, next){
     }
 
     return res.json({status, error});
+}
+
+async function get_transactionComplete(req, res, next){
+    let status = false;
+    let error = null;
+    try{
+        if(!_verifyHeader(req)){
+            throw new Error("Bad or missing authorization.");
+        }
+        if(!req.body){
+            throw new Error("Message body was null.");
+        } 
+        if(!req.body.network){
+            throw new Error("Missing parameter: network");
+        }
+        if(!req.body.transactionId){
+            throw new Error("Missing parameter: transactionId");
+        }
+        let res = await blockchainHelper.checkTransactionComplete(req.body.network, req.body.transactionId);
+        if(res){
+            status = true;
+        }
+    }
+    catch(err){
+        error = _getError(err.message);
+    }
+    return res.json({status, error});
+}
+
+async function get_transactionInfo(req, res, next){
+    let info = null;
+    let error = null;
+    try{
+        if(!_verifyHeader(req)){
+            throw new Error("Bad or missing authorization.");
+        }
+        if(!req.body){
+            throw new Error("Message body was null.");
+        } 
+        if(!req.body.network){
+            throw new Error("Missing parameter: network");
+        }
+        if(!req.body.transactionId){
+            throw new Error("Missing parameter: transactionId");
+        }
+        let res = await blockchainHelper.checkTransactionComplete(req.body.network, req.body.transactionId);
+        if(res){
+            status = true;
+        }
+    }
+    catch(err){
+        error = _getError(err.message);
+    }
+    return res.json({info, error});
 }
 
 Init();
