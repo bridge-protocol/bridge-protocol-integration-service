@@ -285,7 +285,7 @@ async function post_passportVerifyLogin(req,res){
             throw new Error("Missing parameter: response");
         }
 
-        verify = await _authHelper.verifyPassportLoginChallengeResponse(req.body.response, req.body.token, req.body.claimTypes);
+        verify = await _authHelper.verifyPassportLoginChallengeResponse(req.body.response, req.body.token, req.body.claimTypes, _passport.id);
 
         //Call the bridge network and find out the details of the passport that logged in
         verify.passportDetails = await _passportHelper.getDetails(verify.passportId);
