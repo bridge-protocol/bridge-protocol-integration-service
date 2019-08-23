@@ -122,7 +122,7 @@ async function _initializeBridgeProtocol(){
     _profileHelper = new _bridge.Profile(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _claimHelper = new _bridge.Claim(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _applicationHelper = new _bridge.Application(_config.bridgeApiBaseUrl, _passport, _passphrase);
-    _verificationPartnerHelper = new _bridge.VerificationPartner(_config.bridgeApiBaseUrl, _passport, _passphrase);
+    _verificationPartnerHelper = new _bridge.Partner(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _blockchainHelper = new _bridge.Blockchain(_config.bridgeApiBaseUrl, _passport, _passphrase);
 
     //Make sure we can access the public API

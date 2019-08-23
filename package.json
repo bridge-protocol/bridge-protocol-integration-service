@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/bridge-protocol/integration-service#readme",
   "dependencies": {
-    "@bridge-protocol/bridge-protocol-js": "^1.1.4",
+    "@bridge-protocol/bridge-protocol-js": "^2.0.3",
     "express": "^4.16.3",
     "nodemon": "^1.18.3",
     "node-fetch": "^2.3.0"
