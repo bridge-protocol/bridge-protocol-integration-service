@@ -13,32 +13,32 @@ var _passportHelper = null;
 var _profileHelper = null;
 var _claimHelper = null;
 var _authHelper = null;
+var _paymentHelper = null;
 var _applicationHelper = null;
 var _verificationPartnerHelper = null;
 var _blockchainHelper = null;
 
-async function Init()
-{
-    if(!await _initializeBridgeProtocol())
+async function Init() {
+    if (!await _initializeBridgeProtocol())
         return;
 
-    if(!_initializeService())
+    if (!_initializeService())
         return;
 }
 
-function _initializeService(){
+function _initializeService() {
     //Check the service config
-    if(!_config.serviceName){
+    if (!_config.serviceName) {
         console.log("Service name not provided.  Please check configuration.");
         return false;
     }
 
-    if(!_config.port){
+    if (!_config.port) {
         console.log("Port number not provided.  Please check configuration.");
         return false;
     }
 
-    if(!_config.securityHeaderValue){
+    if (!_config.securityHeaderValue) {
         console.log("Security header value not provided.  Please check configuration.");
         return false;
     }
@@ -72,6 +72,12 @@ function _initializeService(){
     _app.route('/passport/verifylogin')
         .post(post_passportVerifyLogin);
 
+    _app.route('/passport/requestpayment')
+        .post(post_passportRequestPayment);
+
+    _app.route('/passport/verifypayment')
+        .post(post_passportVerifyPayment);
+
     _app.route('/application/setstatus')
         .post(post_setStatus);
 
@@ -90,35 +96,36 @@ function _initializeService(){
     return true;
 }
 
-async function _initializeBridgeProtocol(){
+async function _initializeBridgeProtocol() {
     //Validate the configuration and launch arguments
-    if(!_config.passportFile){
+    if (!_config.passportFile) {
         console.log("Passport filename not provided.  Please check configuration.");
         return false;
     }
 
-    let passportFile = _path.join(__dirname,_config.passportFile);
+    let passportFile = _path.join(__dirname, _config.passportFile);
     if (!_fs.existsSync(passportFile)) {
         console.log("Passport filename is invalid.  Please check configuration.");
         return false;
     }
 
     _getPassphrase();
-    if(!_passphrase){
+    if (!_passphrase) {
         console.log("Passphrase not provided.  Please check configuration or launch arguments.");
         return false;
     }
 
     //Load the passport context
     _passportHelper = new _bridge.Passport();
-    _passport = await _passportHelper.loadPassportFromFile(passportFile,_passphrase);
-    if(!_passport){
+    _passport = await _passportHelper.loadPassportFromFile(passportFile, _passphrase);
+    if (!_passport) {
         console.log("Could not open passport from disk.  Aborting.");
         return false;
     }
 
     _passportHelper = new _bridge.Passport(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _authHelper = new _bridge.Auth(_config.bridgeApiBaseUrl, _passport, _passphrase);
+    _paymentHelper = new _bridge.Payment(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _profileHelper = new _bridge.Profile(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _claimHelper = new _bridge.Claim(_config.bridgeApiBaseUrl, _passport, _passphrase);
     _applicationHelper = new _bridge.Application(_config.bridgeApiBaseUrl, _passport, _passphrase);
@@ -127,192 +134,242 @@ async function _initializeBridgeProtocol(){
 
     //Make sure we can access the public API
     let details = await _passportHelper.getDetails(_passport.id);
-    if(!details){
+    if (!details) {
         let error = _getError("Could not get passport details from public API. Check public API endpoint configuration.");
         console.log(error);
         return false;
     }
-        
+
     console.log("Passport " + _passport.id + " opened and Bridge Protocol initialized successfully.");
     return true;
 }
 
-function _getPassphrase(){
+function _getPassphrase() {
     //Check command line args
     process.argv.forEach(function (val, index, array) {
-        if(val.indexOf("passphrase=") == 0)
-        {
-            _passphrase = val.replace("passphrase=","");
+        if (val.indexOf("passphrase=") == 0) {
+            _passphrase = val.replace("passphrase=", "");
         }
     });
 
     //Check config
-    if(_passphrase == null)
+    if (_passphrase == null)
         _passphrase = _config.passportPassphrase;
 }
 
-function _verifyHeader(req)
-{
+function _verifyHeader(req) {
     var securityHeader = req.headers.securityheader; //Apparently headers get lowercased?
-    if(securityHeader && securityHeader == _config.securityHeaderValue)
+    if (securityHeader && securityHeader == _config.securityHeaderValue)
         return true;
 
     return false;
 }
 
-function _getError(error){
+function _getError(error) {
     return "Bridge Protocol Integration Service: " + error;
 }
 
-async function get_serverHome(req, res){
+async function get_serverHome(req, res) {
     res.sendFile(__dirname + '/index.html');
 }
 
-async function get_logo(req,res){
+async function get_logo(req, res) {
     res.sendFile(__dirname + '/images/bridge_logo.png');
 }
 
-async function get_version(req,res){
+async function get_version(req, res) {
     let version = _package.version;
     res.json({ version });
 }
 
-async function get_claimTypes(req, res){
+async function get_claimTypes(req, res) {
     let error = null;
     let claimTypes = null;
 
-    try
-    { 
+    try {
         claimTypes = await _claimHelper.getAllClaimTypes();
     }
-    catch(err)
-    {
+    catch (err) {
         error = _getError(err.message);
     }
 
-    res.json({ claimTypes,error });
+    res.json({ claimTypes, error });
 }
 
-async function get_profileTypes(req, res){
+async function get_profileTypes(req, res) {
     let error = null;
     let profileTypes = null;
 
-    try
-    {
+    try {
         profileTypes = await _profileHelper.getAllProfileTypes();
     }
-    catch(err)
-    {
+    catch (err) {
         error = _getError(err.message);
     }
 
-    res.json({ profileTypes,error });
+    res.json({ profileTypes, error });
 }
 
-async function get_passportId(req, res){
+async function get_passportId(req, res) {
     let error = null;
     let passportId = null;
 
-    try{
-        if(!_verifyHeader(req)){
+    try {
+        if (!_verifyHeader(req)) {
             throw new Error("Bad or missing authorization.");
         }
 
         passportId = _passport.id;
     }
-    catch(err){
+    catch (err) {
         error = _getError(err.message);
     }
 
-    res.json({passportId, error});
+    res.json({ passportId, error });
 }
 
-async function get_passportPublicKey(req, res){
+async function get_passportPublicKey(req, res) {
     let error = null;
     let publicKey = null;
 
-    try{
-        if(!_verifyHeader(req)){
+    try {
+        if (!_verifyHeader(req)) {
             throw new Error("Bad or missing authorization.");
         }
 
         publicKey = _passport.publicKey;
     }
-    catch(err){
+    catch (err) {
         error = _getError(err.message);
     }
 
-    res.json({publicKey, error});
+    res.json({ publicKey, error });
 }
 
-async function post_passportRequestLogin(req, res){
+async function post_passportRequestLogin(req, res) {
     let error = null;
     let request = null;
 
-    if(!_verifyHeader(req)){
+    if (!_verifyHeader(req)) {
         throw new Error("Bad or missing authorization.");
     }
-    if(!req.body){
+    if (!req.body) {
         throw new Error("Message body was null.");
     }
-    if(!req.body.signingToken){
+    if (!req.body.signingToken) {
         throw new Error("Missing parameter: signingToken");
     }
 
-    try
-    {
+    try {
         request = await _authHelper.createPassportLoginChallengeRequest(req.body.signingToken, req.body.claimTypes);
     }
-    catch(err){
+    catch (err) {
         error = _getError(err.message);
     }
 
-    res.json({request, error});
+    res.json({ request, error });
 }
 
-async function post_passportVerifyLogin(req,res){
+async function post_passportVerifyLogin(req, res) {
     let error = null;
     let verify = null;
 
-    try{
-        if(!_verifyHeader(req)){
+    try {
+        if (!_verifyHeader(req)) {
             throw new Error("Bad or missing authorization.");
         }
-        if(!req.body){
+        if (!req.body) {
             throw new Error("Message body was null.");
-        } 
-        if(!req.body.response){
+        }
+        if (!req.body.response) {
             throw new Error("Missing parameter: response");
         }
 
-        verify = await _authHelper.verifyPassportLoginChallengeResponse(req.body.response, req.body.token, req.body.claimTypes, _passport.id);
+        let res = await _authHelper.verifyPassportLoginChallengeResponse(req.body.response, req.body.token, req.body.claimTypes, _passport.id);
+        verify = res.loginResponse;
 
         //Call the bridge network and find out the details of the passport that logged in
-        verify.passportDetails = await _passportHelper.getDetails(verify.passportId);
+        verify.passportDetails = await _passportHelper.getDetails(res.passportId);
 
         //Call the bridge network to find out about the current verification partners on the network
         //And make sure all of the claims that had a valid signature were also from known verification providers
         verify.unknownSignerClaimTypes = [];
 
         let verificationPartners = await _verificationPartnerHelper.getAllPartners();
-        for(let i=0; i<verify.claims.length; i++){
+        for (let i = 0; i < verify.claims.length; i++) {
             let partner = getPartnerById(verificationPartners, verify.claims[i].signedById);
-            if(!partner)
-            {
+            if (!partner) {
                 verify.unknownSignerClaimTypes.push(verify.claims[i].claimTypeId);
             }
         }
     }
-    catch(err){
+    catch (err) {
         error = _getError(err.message);
     }
-    
+
     res.json({ verify, error });
 }
 
-function getPartnerById(verificationPartners, id){
-    for(let i=0; i<verificationPartners.length; i++){
-        if(verificationPartners[i].id == id){
+async function post_passportRequestPayment(req, res) {
+    let error = null;
+    let request = null;
+
+    if (!_verifyHeader(req)) {
+        throw new Error("Bad or missing authorization.");
+    }
+    if (!req.body) {
+        throw new Error("Message body was null.");
+    }
+    if (!req.body.network) {
+        throw new Error("Missing parameter: network");
+    }
+    if (!req.body.amount) {
+        throw new Error("Missing parameter: amount");
+    }
+    if (!req.body.address) {
+        throw new Error("Missing parameter: address");
+    }
+
+    try {
+        request = await _paymentHelper.createPaymentRequest(req.body.network, req.body.amount, req.body.address, req.body.identifier);
+    }
+    catch (err) {
+        error = _getError(err.message);
+    }
+
+    res.json({ request, error });
+}
+
+async function post_passportVerifyPayment(req, res) {
+    let error = null;
+    let verify = null;
+
+    try {
+        if (!_verifyHeader(req)) {
+            throw new Error("Bad or missing authorization.");
+        }
+        if (!req.body) {
+            throw new Error("Message body was null.");
+        }
+        if (!req.body.response) {
+            throw new Error("Missing parameter: response");
+        }
+
+        let res = await _paymentHelper.verifyPaymentResponse(req.body.response, _passport.id);
+        verify = res.paymentResponse;
+        //Call the bridge network and find out the details of the passport that logged in
+        verify.passportDetails = await _passportHelper.getDetails(res.passportId);
+    }
+    catch (err) {
+        error = _getError(err.message);
+    }
+
+    res.json({ verify, error });
+}
+
+function getPartnerById(verificationPartners, id) {
+    for (let i = 0; i < verificationPartners.length; i++) {
+        if (verificationPartners[i].id == id) {
             return verificationPartners[i];
         }
     }
@@ -320,116 +377,116 @@ function getPartnerById(verificationPartners, id){
     return null;
 }
 
-async function post_setStatus(req, res, next){
+async function post_setStatus(req, res, next) {
     let status = false;
     let error = null;
 
-    try{
-        if(!_verifyHeader(req)){
+    try {
+        if (!_verifyHeader(req)) {
             throw new Error("Bad or missing authorization.");
         }
-        if(!req.body){
+        if (!req.body) {
             throw new Error("Message body was null.");
-        } 
-        if(!req.body.applicationId){
+        }
+        if (!req.body.applicationId) {
             throw new Error("Missing parameter: applicationId");
         }
-        if(!req.body.status){ 
+        if (!req.body.status) {
             throw new Error("Missing parameter: applicationStatus");
-        } 
+        }
 
         await _applicationHelper.setStatus(req.body.applicationId, req.body.status);
         status = true;
     }
-    catch(err){
+    catch (err) {
         error = _getError(err.message);
     }
 
-    return res.json({status, error});
+    return res.json({ status, error });
 }
 
-async function post_addClaims(req, res, next){
+async function post_addClaims(req, res, next) {
     let status = false;
     let error = null;
-    try{
-        if(!_verifyHeader(req)){
+    try {
+        if (!_verifyHeader(req)) {
             throw new Error("Bad or missing authorization.");
         }
-        if(!req.body){
+        if (!req.body) {
             throw new Error("Message body was null.");
-        } 
-        if(!req.body.claims){
+        }
+        if (!req.body.claims) {
             throw new Error("Missing parameter: claims");
         }
-        if(!req.body.applicationId){ 
+        if (!req.body.applicationId) {
             throw new Error("Missing parameter: applicationId");
-        } 
-        if(!req.body.publicKey){ 
+        }
+        if (!req.body.publicKey) {
             throw new Error("Missing parameter: publicKey");
-        } 
+        }
 
         let claimPackages = await _claimHelper.createClaimPackages(req.body.publicKey, req.body.claims);
         await _applicationHelper.addClaims(req.body.applicationId, claimPackages);
 
         status = true;
     }
-    catch(err){
+    catch (err) {
         error = _getError(err.message);
     }
 
-    return res.json({status, error});
+    return res.json({ status, error });
 }
 
-async function post_getBlockchainTransactionComplete(req, res, next){
+async function post_getBlockchainTransactionComplete(req, res, next) {
     let complete = false;
     let error = null;
-    try{
-        if(!_verifyHeader(req)){
+    try {
+        if (!_verifyHeader(req)) {
             throw new Error("Bad or missing authorization.");
         }
-        if(!req.body){
+        if (!req.body) {
             throw new Error("Message body was null.");
-        } 
-        if(!req.body.network){
+        }
+        if (!req.body.network) {
             throw new Error("Missing parameter: network");
         }
-        if(!req.body.transactionId){
+        if (!req.body.transactionId) {
             throw new Error("Missing parameter: transactionId");
         }
         let res = await _blockchainHelper.checkTransactionComplete(req.body.network, req.body.transactionId);
-        if(res){
+        if (res) {
             complete = true;
         }
     }
-    catch(err){
+    catch (err) {
         error = _getError(err.message);
     }
-    return res.json({complete, error});
+    return res.json({ complete, error });
 }
 
-async function post_getBlockchainTransactionDetails(req, res, next){
+async function post_getBlockchainTransactionDetails(req, res, next) {
     let info = null;
     let error = null;
-    try{
-        if(!_verifyHeader(req)){
+    try {
+        if (!_verifyHeader(req)) {
             throw new Error("Bad or missing authorization.");
         }
-        if(!req.body){
+        if (!req.body) {
             throw new Error("Message body was null.");
-        } 
-        if(!req.body.network){
+        }
+        if (!req.body.network) {
             throw new Error("Missing parameter: network");
         }
-        if(!req.body.transactionId){
+        if (!req.body.transactionId) {
             throw new Error("Missing parameter: transactionId");
         }
 
         info = await _blockchainHelper.getTransactionStatus(req.body.network, req.body.transactionId);
     }
-    catch(err){
+    catch (err) {
         error = _getError(err.message);
     }
-    return res.json({info, error});
+    return res.json({ info, error });
 }
 
 Init();
