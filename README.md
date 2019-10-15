@@ -10,16 +10,14 @@ The Bridge Protocol Integration Service enables Network Partners and Verificatio
 
 # Configuration 
 ### Config.json keys
-- **port**: The port number to listen on
 - **passportFile**: specify a passport json, default will be ./passport.json
+- **passportPassphrase**: Passphrase for the passport 
 - **securityHeaderValue**: The value of the "securityheader" required for any request to the service
 - **bridgeApiBaseUrl**: The location of the Bridge Protocol Public API for interaction with the network
-- **passportPassphrase**: Passphrase for the passport (optional, required if not provided in command line arguments)
 
-### Command Line Arguments
-- **passphrase**: Passphrase for the passport file (optional, required if not provided in config.json)
+# Installing dependencies
+- Navigate to ./src
+- `npm i`
 
-# Starting the Service
-- **with config.json passphrase**: `npm start`
-- **with command line argument passphrase**: `npm start passphrase=12345`
-
+# Starting the service
+- `npm start`

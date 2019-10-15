@@ -1,8 +1,8 @@
 {
+    "version": "2.0.11",
     "serviceName": "Bridge Protocol Integration Service",
-    "port": 7500,
     "passportFile": "",
     "passportPassphrase": "",
-    "securityHeaderValue": "securityvalue",
-    "bridgeApiBaseUrl": "https://api.bridgeprotocol.io/"
+    "securityHeaderValue": "",
+    "bridgeApiBaseUrl": "https://bridgeprotocol.azurewebsites.net/api/"
 }
