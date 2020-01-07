@@ -1,5 +1,5 @@
-//const _bridge = require('@bridge-protocol/bridge-protocol-js');
-const _bridge = require('../../bridge-protocol-js/src/index');
+const _bridge = require('@bridge-protocol/bridge-protocol-js');
+//const _bridge = require('../../bridge-protocol-js/src/index');
 const _fs = require('fs');
 const _path = require('path');
 
