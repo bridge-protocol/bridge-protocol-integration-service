@@ -34,6 +34,7 @@ async function post_verifySpendTransaction(req, res, next) {
 
 async function post_claimAddTransaction(req, res, next) {
   let error = null;
+  let transaction = null;
 
   try {
     if (!req.body) {
@@ -58,7 +59,7 @@ async function post_claimAddTransaction(req, res, next) {
     }
 
     //If the claim is valid, give them a claim to publish
-    transaction = await req.bridge.NEOUtility.getAddClaimTransaction(claim, req.passport, req.passphrase, req.body.passportId, req.body.address);
+    transaction = await req.bridge.NEOUtility.getAddClaimTransaction(claim, req.passport, req.passphrase, req.body.passportId, req.body.address, req.body.hashOnly);
   }
   catch (err) {
     error = err.message;

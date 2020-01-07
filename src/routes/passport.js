@@ -6,6 +6,7 @@ router.get("/id", get_passportId);
 router.get("/publicKey", get_publicKey);
 router.post("/idfromkey", post_passportIdFromKey);
 router.post("/verify", post_verifySignature);
+router.post("/verifyhash", post_verifyHash);
 router.post("/sign", post_signMessage);
 router.post("/encrypt", post_encryptMessage);
 router.post("/decrypt", post_decryptMessage);
@@ -81,6 +82,30 @@ async function post_verifySignature(req, res, next) {
         }
 
         verified = await req.bridge.Crypto.verifySignedMessage(req.body.messageSignature, req.body.publicKeyHex);
+    }
+    catch (err) {
+        error = err.message;
+    }
+
+    return res.json({ verified, error });
+}
+
+async function post_verifyHash(req, res, next){
+    let verified = false;
+    let error = null;
+
+    try {
+        if (!req.body) {
+            throw new Error("Message body was null.");
+        }
+        if (!req.body.str) {
+            throw new Error("String not provided.");
+        }
+        if (!req.body.hash) {
+            throw new Error("Hash not provided.");
+        }
+
+        verified = req.bridge.Crypto.verifyHash(req.body.str, req.body.hash);
     }
     catch (err) {
         error = err.message;
