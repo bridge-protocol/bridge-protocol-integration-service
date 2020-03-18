@@ -1,5 +1,5 @@
-const _bridge = require('@bridge-protocol/bridge-protocol-js');
-//const _bridge = require('../../bridge-protocol-js/src/index');
+//const _bridge = require('@bridge-protocol/bridge-protocol-js');
+const _bridge = require('../../bridge-protocol-js/src/index');
 const _fs = require('fs');
 const _path = require('path');
 
@@ -16,7 +16,7 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var passportRouter = require('./routes/passport');
-var neoRouter = require('./routes/neo');
+var blockchainRouter = require('./routes/blockchain');
 
 var app = express();
 
@@ -50,7 +50,7 @@ app.use(function (req, res, next) {
 //Define our main routes;
 app.use('/', indexRouter);
 app.use('/passport', passportRouter);
-app.use('/neo', neoRouter);
+app.use('/blockchain', blockchainRouter);
 
 // Catch 404 and forward to error handler if the request is to a route we aren't handling
 app.use(function (req, res, next) {
@@ -107,9 +107,9 @@ async function initBridge(req) {
   }
 
   //Load the passport context
-  let passportHelper = new _bridge.Passport();
-  _passport = await passportHelper.loadPassportFromFile(__dirname + "/" + _config.passportFile, _passphrase);
-  if (!_passport) {
+  _passport = new _bridge.Models.Passport();
+  await _passport.openFile(__dirname + "/" + _config.passportFile, _passphrase);
+  if (!_passport.id) {
     console.log("Could not open passport from disk.  Aborting.");
     return;
   }

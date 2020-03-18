@@ -36,7 +36,7 @@ async function post_passportIdFromKey(req, res, next) {
             throw new Error("Missing parameter: publicKeyHex");
         }
 
-        passportId = await req.bridge.Crypto.getPassportIdForPublicKey(req.body.publicKeyHex);
+        passportId = await req.bridge.Utils.Crypto.getPassportIdForPublicKey(req.body.publicKeyHex);
     }
     catch (err) {
         error = err.message;
@@ -57,7 +57,7 @@ async function post_signMessage(req, res, next) {
             throw new Error("Missing parameter: messageText");
         }
 
-        signedMessage = await req.bridge.Crypto.signMessage(req.body.messageText, req.passport.privateKey, req.passphrase, true);
+        signedMessage = await req.bridge.Utils.Crypto.signMessage(req.body.messageText, req.passport.privateKey, req.passphrase, true);
     }
     catch (err) {
         error = err.message;
@@ -81,7 +81,7 @@ async function post_verifySignature(req, res, next) {
             throw new Error("Public key not provided.");
         }
 
-        verified = await req.bridge.Crypto.verifySignedMessage(req.body.messageSignature, req.body.publicKeyHex);
+        verified = await req.bridge.Utils.Crypto.verifySignedMessage(req.body.messageSignature, req.body.publicKeyHex);
     }
     catch (err) {
         error = err.message;
@@ -105,7 +105,7 @@ async function post_verifyHash(req, res, next){
             throw new Error("Hash not provided.");
         }
 
-        verified = req.bridge.Crypto.verifyHash(req.body.str, req.body.hash);
+        verified = req.bridge.Utils.Crypto.verifyHash(req.body.str, req.body.hash);
     }
     catch (err) {
         error = err.message;
@@ -129,7 +129,7 @@ async function post_encryptMessage(req, res, next) {
             req.body.decryptPublicKeyHex = req.passport.key.public; //If it's not specified, we assume we are encrypting it and use our key
         }
 
-        encryptedMessage = await req.bridge.Crypto.encryptMessage(req.body.messageText, req.body.decryptPublicKeyHex, req.passport.privateKey, req.passphrase, true);
+        encryptedMessage = await req.bridge.Utils.Crypto.encryptMessage(req.body.messageText, req.body.decryptPublicKeyHex, req.passport.privateKey, req.passphrase, true);
     }
     catch (err) {
         error = err.message;
@@ -153,7 +153,7 @@ async function post_decryptMessage(req, res, next) {
             req.body.encryptingPublicKeyHex = req.passport.key.public; //If it's not specified, we assume we encrypted it and use our key
         }
 
-        decryptedMessage = await req.bridge.Crypto.decryptMessage(req.body.encryptedMessage, req.body.encryptingPublicKeyHex, req.passport.privateKey, req.passphrase);
+        decryptedMessage = await req.bridge.Utils.Crypto.decryptMessage(req.body.encryptedMessage, req.body.encryptingPublicKeyHex, req.passport.privateKey, req.passphrase);
     }
     catch (err) {
         error = err.message;
@@ -175,8 +175,7 @@ async function post_passportRequestLogin(req, res){
 
     try
     {
-        let authHelper = new req.bridge.Auth(req.apiUrl, req.passport, req.passphrase);
-        request = await authHelper.createPassportLoginChallengeRequest(req.body.signingToken, req.body.claimTypes);
+        request = await req.bridge.Messaging.Auth.createPassportChallengeRequest(req.passport, req.passphrase, req.body.signingToken, req.body.claimTypes, res.body.networks);
     }
     catch(err){
         error = err.message;
@@ -197,27 +196,17 @@ async function post_passportVerifyLogin(req,res){
             throw new Error("Missing parameter: response");
         }
 
-        let authHelper = new req.bridge.Auth(req.apiUrl, req.passport, req.passphrase);
-        let passportHelper = new req.bridge.Passport(req.apiUrl, req.passport, req.passphrase);
-        let partnerHelper = new req.bridge.Partner(req.apiUrl, req.passport, req.passphrase);
-
-        let res = await authHelper.verifyPassportLoginChallengeResponse(req.body.response, req.body.token, req.body.claimTypes, req.passport.id);
-        verify = res.loginResponse;
+        let res = await await req.bridge.Messaging.Auth.verifyPassportChallengeResponse(req.passport, req.passphrase, req.body.response, req.body.token, req.body.claimTypes, req.body.networks);
 
         //Call the bridge network and find out the details of the passport that logged in
-        verify.passportDetails = await passportHelper.getDetails(res.loginResponse.passportId);
+        verify.passportDetails = await req.bridge.Services.Passport.getDetails(res.passport, res.passphrase, res.loginResponse.passportId);
 
-        //Call the bridge network to find out about the current verification partners on the network
-        //And make sure all of the claims that had a valid signature were also from known verification providers
+        //Make sure all of the claims that had a valid signature were also from known verification providers
         verify.unknownSignerClaimTypes = [];
-
-        let verificationPartners = await partnerHelper.getAllPartners();
         for(let i=0; i<verify.claims.length; i++){
-            let partner = partnerHelper.getPartnerById(verificationPartners, verify.claims[i].signedById);
+            let partner = req.bridge.Services.Partner.getPartner(verify.claims[i].signedById);
             if(!partner)
-            {
                 verify.unknownSignerClaimTypes.push(verify.claims[i].claimTypeId);
-            }
         }
     }
     catch(err){
@@ -245,8 +234,7 @@ async function post_passportRequestPayment(req, res) {
     }
 
     try {
-        let paymentHelper = new req.bridge.Payment(req.apiUrl, req.passport, req.passphrase);
-        request = await paymentHelper.createPaymentRequest(req.body.network, req.body.amount, req.body.address, req.body.identifier);
+        request = await req.bridge.Messsaging.Payment.createPaymentRequest(req.passport, req.pasphrase, req.body.network, req.body.amount, req.body.address, req.body.identifier);
     }
     catch (err) {
         error = err.message;
@@ -267,9 +255,7 @@ async function post_passportVerifyPayment(req, res) {
             throw new Error("Missing parameter: response");
         }
 
-        let passportHelper = new req.bridge.Passport(req.apiUrl, req.passport, req.passphrase);
-        let paymentHelper = new req.bridge.Payment(req.apiUrl, req.passport, req.passphrase);
-        let res = await paymentHelper.verifyPaymentResponse(req.body.response, req.passport.id);
+        let res = await res.bridge.Messsaging.Payment.verifyPaymentResponse(req.passport, req.passphrase, req.body.response);
         verify = res.paymentResponse;
         //Call the bridge network and find out the details of the passport that logged in
         verify.passportDetails = await passportHelper.getDetails(res.passportId);
@@ -296,11 +282,9 @@ async function post_passportRequestClaimsImport(req, res) {
     }
 
     try {
-        let claimHelper = new req.bridge.Claim(req.apiUrl, req.passport, req.passphrase);
-        //Create the claim packages
-        let claimPackages = await claimHelper.createClaimPackages(req.body.publicKey, req.body.claims);
+        let claimPackages = await req.bridge.Utils.Claim.createClaimPackagesFromClaims(req.body.claims, req.body.publicKey, req.passport.publicKey, req.passport.privateKey, req.password);
 	    //Create the request
-        request = await claimHelper.createClaimsImportRequest(claimPackages);
+        request = await req.bridge.Messaging.Claim.createClaimsImportRequest(req.passsport, req.passphrase, claimPackages);
     }
     catch (err) {
         error = err.message;
