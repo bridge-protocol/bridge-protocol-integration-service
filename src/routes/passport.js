@@ -5,48 +5,48 @@ var router = express.Router();
 router.get("/id", get_passportId);
 router.get("/publicKey", get_publicKey);
 router.post("/idfromkey", post_passportIdFromKey);
+router.post("/sign", post_signMessage);
 router.post("/verify", post_verifySignature);
 router.post("/verifyhash", post_verifyHash);
-router.post("/sign", post_signMessage);
 router.post("/encrypt", post_encryptMessage);
 router.post("/decrypt", post_decryptMessage);
-router.post("/requestlogin", post_passportRequestLogin);
-router.post("/verifylogin", post_passportVerifyLogin);
+router.post("/requestclaimsimport", post_passportRequestClaimsImport);
+router.post("/requestauth", post_passportRequestAuth);
+router.post("/verifyauth", post_passportVerifyAuth);
 router.post("/requestpayment", post_passportRequestPayment);
 router.post("/verifypayment", post_passportVerifyPayment);
-router.post("/requestclaimsimport", post_passportRequestClaimsImport);
 
 async function get_passportId(req, res) {
-    res.json({ passportId: req.passport.id });
+    res.json({ response: req.passport.id });
 }
 
 async function get_publicKey(req, res) {
-    res.json({ publicKey: req.passport.publicKey });
+    res.json({ response: req.passport.publicKey });
 }
 
 async function post_passportIdFromKey(req, res, next) {
-    let passportId = null;
+    let response = null;
     let error = null;
 
     try {
         if (!req.body) {
             throw new Error("Message body was null.");
         }
-        if (!req.body.publicKeyHex) {
-            throw new Error("Missing parameter: publicKeyHex");
+        if (!req.body.publicKey) {
+            throw new Error("Missing parameter: publicKey");
         }
 
-        passportId = await req.bridge.Utils.Crypto.getPassportIdForPublicKey(req.body.publicKeyHex);
+        response = await req.bridge.Utils.Crypto.getPassportIdForPublicKey(req.body.publicKey);
     }
     catch (err) {
         error = err.message;
     }
 
-    return res.json({ passportId, error });
+    return res.json({ response, error });
 }
 
 async function post_signMessage(req, res, next) {
-    let signedMessage = null;
+    let response = null;
     let error = null;
 
     try {
@@ -57,17 +57,17 @@ async function post_signMessage(req, res, next) {
             throw new Error("Missing parameter: messageText");
         }
 
-        signedMessage = await req.bridge.Utils.Crypto.signMessage(req.body.messageText, req.passport.privateKey, req.passphrase, true);
+        response = await req.bridge.Utils.Crypto.signMessage(req.body.messageText, req.passport.privateKey, req.passphrase, true);
     }
     catch (err) {
         error = err.message;
     }
 
-    return res.json({ signedMessage, error });
+    return res.json({ response, error });
 }
 
 async function post_verifySignature(req, res, next) {
-    let verified = false;
+    let response = false;
     let error = null;
 
     try {
@@ -77,21 +77,21 @@ async function post_verifySignature(req, res, next) {
         if (!req.body.messageSignature) {
             throw new Error("Signed message not provided.");
         }
-        if (!req.body.publicKeyHex) {
+        if (!req.body.publicKey) {
             throw new Error("Public key not provided.");
         }
 
-        verified = await req.bridge.Utils.Crypto.verifySignedMessage(req.body.messageSignature, req.body.publicKeyHex);
+        response = await req.bridge.Utils.Crypto.verifySignedMessage(req.body.messageSignature, req.body.publicKey);
     }
     catch (err) {
         error = err.message;
     }
 
-    return res.json({ verified, error });
+    return res.json({ response, error });
 }
 
 async function post_verifyHash(req, res, next){
-    let verified = false;
+    let response = false;
     let error = null;
 
     try {
@@ -105,17 +105,17 @@ async function post_verifyHash(req, res, next){
             throw new Error("Hash not provided.");
         }
 
-        verified = req.bridge.Utils.Crypto.verifyHash(req.body.str, req.body.hash);
+        response = req.bridge.Utils.Crypto.verifyHash(req.body.str, req.body.hash);
     }
     catch (err) {
         error = err.message;
     }
 
-    return res.json({ verified, error });
+    return res.json({ response, error });
 }
 
 async function post_encryptMessage(req, res, next) {
-    let encryptedMessage = null;
+    let response = null;
     let error = null;
 
     try {
@@ -125,21 +125,21 @@ async function post_encryptMessage(req, res, next) {
         if (!req.body.messageText) {
             throw new Error("Missing parameter: messageText");
         }
-        if (!req.body.decryptPublicKeyHex) {
-            req.body.decryptPublicKeyHex = req.passport.key.public; //If it's not specified, we assume we are encrypting it and use our key
+        if (!req.body.decryptPublicKey) {
+            req.body.decryptPublicKey = req.passport.key.public; //If it's not specified, we assume we are encrypting it and use our key
         }
 
-        encryptedMessage = await req.bridge.Utils.Crypto.encryptMessage(req.body.messageText, req.body.decryptPublicKeyHex, req.passport.privateKey, req.passphrase, true);
+        response = await req.bridge.Utils.Crypto.encryptMessage(req.body.messageText, req.body.decryptPublicKey, req.passport.privateKey, req.passphrase, true);
     }
     catch (err) {
         error = err.message;
     }
 
-    return res.json({ encryptedMessage, error });
+    return res.json({ response, error });
 }
 
 async function post_decryptMessage(req, res, next) {
-    let decryptedMessage = null;
+    let response = null;
     let error = null;
 
     try {
@@ -149,44 +149,44 @@ async function post_decryptMessage(req, res, next) {
         if (!req.body.encryptedMessage) {
             throw new Error("Missing parameter: encryptedMessage");
         }
-        if (!req.body.encryptingPublicKeyHex) {
-            req.body.encryptingPublicKeyHex = req.passport.key.public; //If it's not specified, we assume we encrypted it and use our key
+        if (!req.body.encryptingPublicKey) {
+            req.body.encryptingPublicKey = req.passport.key.public; //If it's not specified, we assume we encrypted it and use our key
         }
 
-        decryptedMessage = await req.bridge.Utils.Crypto.decryptMessage(req.body.encryptedMessage, req.body.encryptingPublicKeyHex, req.passport.privateKey, req.passphrase);
+        response = await req.bridge.Utils.Crypto.decryptMessage(req.body.encryptedMessage, req.body.encryptingPublicKey, req.passport.privateKey, req.passphrase);
     }
     catch (err) {
         error = err.message;
     }
 
-    return res.json({ decryptedMessage, error });
+    return res.json({ response, error });
 }
 
-async function post_passportRequestLogin(req, res){
+async function post_passportRequestAuth(req, res){
     let error = null;
-    let request = null;
+    let response = null;
 
     if(!req.body){
         throw new Error("Message body was null.");
     }
-    if(!req.body.signingToken){
-        throw new Error("Missing parameter: signingToken");
+    if(!req.body.token){
+        throw new Error("Missing parameter: token");
     }
 
     try
     {
-        request = await req.bridge.Messaging.Auth.createPassportChallengeRequest(req.passport, req.passphrase, req.body.signingToken, req.body.claimTypes, res.body.networks);
+        response = await req.bridge.Messaging.Auth.createPassportChallengeRequest(req.passport, req.passphrase, req.body.token, req.body.claimTypes, req.body.networks);
     }
     catch(err){
         error = err.message;
     }
 
-    res.json({request, error});
+    res.json({response, error});
 }
 
-async function post_passportVerifyLogin(req,res){
+async function post_passportVerifyAuth(req,res){
     let error = null;
-    let verify = null;
+    let response = null;
 
     try{
         if(!req.body){
@@ -195,30 +195,31 @@ async function post_passportVerifyLogin(req,res){
         if(!req.body.response){
             throw new Error("Missing parameter: response");
         }
+        if(!req.body.token){
+            throw new Error("Missing parameter: token");
+        }
 
-        let res = await await req.bridge.Messaging.Auth.verifyPassportChallengeResponse(req.passport, req.passphrase, req.body.response, req.body.token, req.body.claimTypes, req.body.networks);
-
-        //Call the bridge network and find out the details of the passport that logged in
-        verify.passportDetails = await req.bridge.Services.Passport.getDetails(res.passport, res.passphrase, res.loginResponse.passportId);
-
+        response = await req.bridge.Messaging.Auth.verifyPassportChallengeResponse(req.passport, req.passphrase, req.body.response, req.body.token);
+        
         //Make sure all of the claims that had a valid signature were also from known verification providers
-        verify.unknownSignerClaimTypes = [];
-        for(let i=0; i<verify.claims.length; i++){
-            let partner = req.bridge.Services.Partner.getPartner(verify.claims[i].signedById);
-            if(!partner)
-                verify.unknownSignerClaimTypes.push(verify.claims[i].claimTypeId);
+        if(response.claims){
+            for(let i=0; i<response.claims.length; i++){
+                let partner = await req.bridge.Services.Partner.getPartner(response.claims[i].signedById);
+                response.claims[i].signedByPartner = (partner != null);
+            }
         }
     }
     catch(err){
+        response = null;
         error = err.message;
     }
     
-    res.json({ verify, error });
+    res.json({ response, error });
 }
 
 async function post_passportRequestPayment(req, res) {
     let error = null;
-    let request = null;
+    let response = null;
 
     if (!req.body) {
         throw new Error("Message body was null.");
@@ -232,20 +233,23 @@ async function post_passportRequestPayment(req, res) {
     if (!req.body.address) {
         throw new Error("Missing parameter: address");
     }
+    if(!req.body.identifier){
+        throw new Error("Missing parameter: identifier");
+    }
 
     try {
-        request = await req.bridge.Messsaging.Payment.createPaymentRequest(req.passport, req.pasphrase, req.body.network, req.body.amount, req.body.address, req.body.identifier);
+        response = await req.bridge.Messaging.Payment.createPaymentRequest(req.passport, req.passphrase, req.body.network, req.body.amount, req.body.address, req.body.identifier);
     }
     catch (err) {
         error = err.message;
     }
 
-    res.json({ request, error });
+    res.json({ response, error });
 }
 
 async function post_passportVerifyPayment(req, res) {
     let error = null;
-    let verify = null;
+    let response = null;
 
     try {
         if (!req.body) {
@@ -255,21 +259,20 @@ async function post_passportVerifyPayment(req, res) {
             throw new Error("Missing parameter: response");
         }
 
-        let res = await res.bridge.Messsaging.Payment.verifyPaymentResponse(req.passport, req.passphrase, req.body.response);
-        verify = res.paymentResponse;
-        //Call the bridge network and find out the details of the passport that logged in
-        verify.passportDetails = await passportHelper.getDetails(res.passportId);
+        response = await req.bridge.Messaging.Payment.verifyPaymentResponse(req.passport, req.passphrase, req.body.response);
     }
     catch (err) {
+        response = null;
         error = err.message;
     }
 
-    res.json({ verify, error });
+    res.json({ response, error });
 }
+
 
 async function post_passportRequestClaimsImport(req, res) {
     let error = null;
-    let request = null;
+    let response = null;
 
     if (!req.body) {
         throw new Error("Message body was null.");
@@ -282,16 +285,14 @@ async function post_passportRequestClaimsImport(req, res) {
     }
 
     try {
-        let claimPackages = await req.bridge.Utils.Claim.createClaimPackagesFromClaims(req.body.claims, req.body.publicKey, req.passport.publicKey, req.passport.privateKey, req.password);
-	    //Create the request
-        request = await req.bridge.Messaging.Claim.createClaimsImportRequest(req.passsport, req.passphrase, claimPackages);
+        let claimPackages = await req.bridge.Utils.Claim.createClaimPackagesFromClaims(req.body.claims, req.body.publicKey, req.passport.publicKey, req.passport.privateKey, req.passphrase);
+        response = await req.bridge.Messaging.Claim.createClaimsImportRequest(req.passport, req.passphrase, claimPackages);
     }
     catch (err) {
         error = err.message;
     }
 
-    res.json({ request, error });
+    res.json({ response, error });
 }
-
 
 module.exports = router;

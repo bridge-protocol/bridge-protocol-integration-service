@@ -12,30 +12,30 @@ router.get("/profile/types", get_profileTypes);
 
 async function get_claimTypes(req, res) {
     let error = null;
-    let claimTypes = null;
+    let response = null;
 
     try {
-        claimTypes = await req.bridge.Services.Claim.getAllTypes();
+        response = await req.bridge.Services.Claim.getAllTypes();
     }
     catch (err) {
         error = _getError(err.message);
     }
 
-    res.json({ claimTypes, error });
+    res.json({ response, error });
 }
 
 async function get_profileTypes(req, res) {
     let error = null;
-    let profileTypes = null;
+    let response = null;
 
     try {
-        profileTypes = await req.bridge.Services.Profile.getAllTypes();
+        response = await req.bridge.Services.Profile.getAllTypes();
     }
     catch (err) {
         error = _getError(err.message);
     }
 
-    res.json({ profileTypes, error });
+    res.json({ response, error });
 }
 
 
