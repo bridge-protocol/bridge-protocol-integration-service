@@ -15,7 +15,7 @@ async function get_claimTypes(req, res) {
     let claimTypes = null;
 
     try {
-        claimTypes = await bridge.Services.Claim.getAllClaimTypes();
+        claimTypes = await req.bridge.Services.Claim.getAllTypes();
     }
     catch (err) {
         error = _getError(err.message);
@@ -29,7 +29,7 @@ async function get_profileTypes(req, res) {
     let profileTypes = null;
 
     try {
-        profileTypes = await req.bridge.Services.Profile.getAllProfileTypes();
+        profileTypes = await req.bridge.Services.Profile.getAllTypes();
     }
     catch (err) {
         error = _getError(err.message);
