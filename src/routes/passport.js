@@ -5,6 +5,7 @@ var router = express.Router();
 router.get("/id", get_passportId);
 router.get("/publicKey", get_publicKey);
 router.post("/idfromkey", post_passportIdFromKey);
+router.post("/details", post_passportDetails);
 router.post("/sign", post_signMessage);
 router.post("/verify", post_verifySignature);
 router.post("/verifyhash", post_verifyHash);
@@ -37,6 +38,27 @@ async function post_passportIdFromKey(req, res, next) {
         }
 
         response = await req.bridge.Utils.Crypto.getPassportIdForPublicKey(req.body.publicKey);
+    }
+    catch (err) {
+        error = err.message;
+    }
+
+    return res.json({ response, error });
+}
+
+async function post_passportDetails(req, res, next){
+    let response = null;
+    let error = null;
+
+    try {
+        if (!req.body) {
+            throw new Error("Message body was null.");
+        }
+        if (!req.body.passportId) {
+            throw new Error("Missing parameter: passportId");
+        }
+
+        response = await req.bridge.Services.Passport.getDetails(req.passport, req.passphrase, req.body.passportId);
     }
     catch (err) {
         error = err.message;

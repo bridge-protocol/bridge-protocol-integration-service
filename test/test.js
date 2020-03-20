@@ -27,6 +27,11 @@ async function Init(){
     console.log(passportId.response);
     console.log("");
 
+    console.log("- Get passport details - /passport/details");
+    let passportDetails = await callEndpoint("/passport/details", { passportId });
+    console.log(JSON.stringify(passportDetails.response));
+    console.log("");
+
     console.log("- Get public key - /passport/publicKey");
     let publicKey = await callEndpoint("/passport/publicKey");
     publicKey = publicKey.response;
