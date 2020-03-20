@@ -7,8 +7,7 @@ router.post("/createclaimpublish", post_approveClaimPublish);
 router.post("/approveclaimpublish", post_approveClaimPublish);
 
 async function post_verifyPayment(req, res, next) {
-  let verified = false;
-  let complete = false;
+  let response = null;
   let error = null;
 
   try {
@@ -30,18 +29,17 @@ async function post_verifyPayment(req, res, next) {
     if (!req.body.amount) {
       throw new Error("Missing parameter: amount");
     }
-    if (!req.body.paymentIdentifier) {
-      throw new Error("Missing parameter: paymentIdentifier");
+    if (!req.body.identifier) {
+      throw new Error("Missing parameter: identifier");
     }
 
-    var res = await req.bridge.Services.Blockchain.verifyPayment(req.body.network, req.body.txid, req.body.from, req.body.to, req.body.amount, req.body.paymentIdentifier);
-    verified = res.success;
-    complete = res.complete;
+    response = await req.bridge.Services.Blockchain.verifyPayment(req.body.network, req.body.txid, req.body.from, req.body.to, req.body.amount, req.body.identifier);
   }
   catch (err) {
     error = err.message;
   }
-  return res.json({ verified, complete, error });
+
+  return res.json({ response, error });
 }
 
 //Bridge Use Only.  Smart Contract will only accept Transactions from Bridge Addresses
@@ -49,7 +47,7 @@ async function post_verifyPayment(req, res, next) {
 //For ETH we execute a transaction to approve the publish after they already sent a publish transaction
 async function post_approveClaimPublish(req, res, next) {
   let error = null;
-  let transaction = null;
+  let response = null;
 
   try {
     if (!req.body) {
@@ -68,7 +66,7 @@ async function post_approveClaimPublish(req, res, next) {
       throw new Error("Missing parameter: claim");
     }
 
-    let claim = new bridge.Models.Claim(req.body.claim);
+    let claim = new req.bridge.Models.Claim(req.body.claim);
     if (!claim.verifySignature(req.body.passportId)) {
       throw new Error("Claim signature verification failed.");
     }
@@ -79,13 +77,13 @@ async function post_approveClaimPublish(req, res, next) {
       throw new Error("Could not find or unlock " + req.body.network + " wallet");
 
     //If the claim is valid, give them a claim to publish
-    transaction = await req.bridge.Services.Blockchain.approveClaimPublish(wallet, req.body.address, claim, req.body.hashOnly)
+    response = await req.bridge.Services.Blockchain.approveClaimPublish(wallet, req.body.address, claim, req.body.hashOnly)
   }
   catch (err) {
     error = err.message;
   }
 
-  return res.json({ transaction, error });
+  return res.json({ response, error });
 }
 
 module.exports = router;

@@ -125,6 +125,25 @@ async function Init(){
     let verifiedPaymentResponse = await callEndpoint("/passport/verifypayment", { response: paymentResponse });
     console.log(JSON.stringify(verifiedPaymentResponse.response));
     console.log("");
+
+    let neoWallet = passport.getWalletForNetwork("neo");
+    let ethWallet = passport.getWalletForNetwork("eth");
+    let claim = await passport.getDecryptedClaim("3", _password);
+
+    console.log("- Verify blockchain payment - /blockchain/verifypayment");
+    let verifiedPayment = await callEndpoint("/blockchain/verifypayment", { network: neoWallet.network, txid: "12345", from: neoWallet.address, to: neoWallet.address, amount: 1, identifier:"12345" });
+    console.log(JSON.stringify(verifiedPayment));
+    console.log("");
+
+    console.log("- Create NEO claim publish transaction - /blockchain/createclaimpublish");
+    let claimPublishTransaction = await callEndpoint("/blockchain/createclaimpublish", { network: neoWallet.network, passportId: passport.id, address: neoWallet.address, claim});
+    console.log(JSON.stringify(claimPublishTransaction, ));
+    console.log("");
+
+    console.log("- Approve ETH claim publish transaction - /blockchain/createclaimpublish");
+    let claimPublishApprove = await callEndpoint("/blockchain/approveclaimpublish", { network: ethWallet.network, passportId: passport.id, address: ethWallet.address, claim});
+    console.log(JSON.stringify(claimPublishApprove));
+    console.log("");
 }
 
 async function callEndpoint(path, data){
