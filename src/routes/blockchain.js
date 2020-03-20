@@ -3,7 +3,6 @@ var router = express.Router();
 
 //Sub-routes
 router.post("/verifypayment", post_verifyPayment);
-router.post("/createclaimpublish", post_approveClaimPublish);
 router.post("/approveclaimpublish", post_approveClaimPublish);
 
 async function post_verifyPayment(req, res, next) {
