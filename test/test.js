@@ -38,34 +38,34 @@ async function Init(){
     console.log(idFromKey.response);
     console.log("");
 
-    let messageText = "test message here";
+    let message = "test message here";
     console.log("- Sign message - /passport/sign");
-    let signature = await callEndpoint("/passport/sign", { messageText });
-    let messageSignature = signature.response;
-    console.log(messageSignature);
+    let signature = await callEndpoint("/passport/sign", { message });
+    signature = signature.response;
+    console.log(signature);
     console.log("");
 
     console.log("- Verify signed message - /passport/verify");
-    let verifiedSignature = await callEndpoint("/passport/verify", { messageSignature, publicKey });
+    let verifiedSignature = await callEndpoint("/passport/verify", { signature, publicKey });
     console.log(verifiedSignature.response);
     console.log("");
 
     console.log("- Verify hash - /passport/verifyhash");
-    let hash = _bridge.Utils.Crypto.getHash(messageText);
-    let verifiedHash = await callEndpoint("/passport/verifyhash", { str: messageText, hash });
+    let hash = _bridge.Utils.Crypto.getHash(message);
+    let verifiedHash = await callEndpoint("/passport/verifyhash", { message, hash });
     console.log(verifiedHash.response);
     console.log("");
 
     console.log("- Encrypt message - /passport/encrypt");
-    let encryptedMessage = await callEndpoint("/passport/encrypt", { messageText, decryptPublicKey: publicKey });
-    encryptedMessage = encryptedMessage.response;
-    console.log(encryptedMessage);
+    let encrypted = await callEndpoint("/passport/encrypt", { message, publicKey });
+    encrypted = encrypted.response;
+    console.log(encrypted);
     console.log("");
 
     console.log("- Decrypt message - /passport/decrypt");
-    let decryptedMessage = await callEndpoint("/passport/decrypt", { encryptedMessage, encryptingPublicKey: publicKey });
-    decryptedMessage = decryptedMessage.response;
-    console.log(decryptedMessage);
+    let decrypted = await callEndpoint("/passport/decrypt", { encrypted, publicKey });
+    decrypted = decrypted.response;
+    console.log(decrypted);
     console.log("");
 
     console.log("- Request claims import - /passport/requestclaimsimport");

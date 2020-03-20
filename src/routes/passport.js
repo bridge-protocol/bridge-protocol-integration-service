@@ -53,11 +53,11 @@ async function post_signMessage(req, res, next) {
         if (!req.body) {
             throw new Error("Message body was null.");
         }
-        if (!req.body.messageText) {
-            throw new Error("Missing parameter: messageText");
+        if (!req.body.message) {
+            throw new Error("Missing parameter: message");
         }
 
-        response = await req.bridge.Utils.Crypto.signMessage(req.body.messageText, req.passport.privateKey, req.passphrase, true);
+        response = await req.bridge.Utils.Crypto.signMessage(req.body.message, req.passport.privateKey, req.passphrase, true);
     }
     catch (err) {
         error = err.message;
@@ -74,14 +74,14 @@ async function post_verifySignature(req, res, next) {
         if (!req.body) {
             throw new Error("Message body was null.");
         }
-        if (!req.body.messageSignature) {
-            throw new Error("Signed message not provided.");
+        if (!req.body.signature) {
+            throw new Error("Signature not provided.");
         }
         if (!req.body.publicKey) {
             throw new Error("Public key not provided.");
         }
 
-        response = await req.bridge.Utils.Crypto.verifySignedMessage(req.body.messageSignature, req.body.publicKey);
+        response = await req.bridge.Utils.Crypto.verifySignedMessage(req.body.signature, req.body.publicKey);
     }
     catch (err) {
         error = err.message;
@@ -98,14 +98,14 @@ async function post_verifyHash(req, res, next){
         if (!req.body) {
             throw new Error("Message body was null.");
         }
-        if (!req.body.str) {
-            throw new Error("String not provided.");
+        if (!req.body.text) {
+            throw new Error("Message not provided.");
         }
         if (!req.body.hash) {
             throw new Error("Hash not provided.");
         }
 
-        response = req.bridge.Utils.Crypto.verifyHash(req.body.str, req.body.hash);
+        response = req.bridge.Utils.Crypto.verifyHash(req.body.message, req.body.hash);
     }
     catch (err) {
         error = err.message;
@@ -122,14 +122,14 @@ async function post_encryptMessage(req, res, next) {
         if (!req.body) {
             throw new Error("Message body was null.");
         }
-        if (!req.body.messageText) {
-            throw new Error("Missing parameter: messageText");
+        if (!req.body.message) {
+            throw new Error("Missing parameter: message");
         }
-        if (!req.body.decryptPublicKey) {
-            req.body.decryptPublicKey = req.passport.key.public; //If it's not specified, we assume we are encrypting it and use our key
+        if (!req.body.publicKey) {
+            req.body.publicKey = req.passport.key.public; //If it's not specified, we assume we are encrypting it and use our key
         }
 
-        response = await req.bridge.Utils.Crypto.encryptMessage(req.body.messageText, req.body.decryptPublicKey, req.passport.privateKey, req.passphrase, true);
+        response = await req.bridge.Utils.Crypto.encryptMessage(req.body.message, req.body.publicKey, req.passport.privateKey, req.passphrase, true);
     }
     catch (err) {
         error = err.message;
@@ -146,14 +146,14 @@ async function post_decryptMessage(req, res, next) {
         if (!req.body) {
             throw new Error("Message body was null.");
         }
-        if (!req.body.encryptedMessage) {
-            throw new Error("Missing parameter: encryptedMessage");
+        if (!req.body.encrypted) {
+            throw new Error("Missing parameter: encrypted");
         }
-        if (!req.body.encryptingPublicKey) {
-            req.body.encryptingPublicKey = req.passport.key.public; //If it's not specified, we assume we encrypted it and use our key
+        if (!req.body.publicKey) {
+            req.body.publicKey = req.passport.key.public; //If it's not specified, we assume we encrypted it and use our key
         }
 
-        response = await req.bridge.Utils.Crypto.decryptMessage(req.body.encryptedMessage, req.body.encryptingPublicKey, req.passport.privateKey, req.passphrase);
+        response = await req.bridge.Utils.Crypto.decryptMessage(req.body.encrypted, req.body.publicKey, req.passport.privateKey, req.passphrase);
     }
     catch (err) {
         error = err.message;
