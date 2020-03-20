@@ -40,7 +40,6 @@ app.use(function (req, res, next) {
     //Set our global variables for the request and relay to next
     req.version = _config.version;
     req.bridge = _bridge;
-    req.apiUrl = _config.bridgeApiBaseUrl;
     req.passport = _passport;
     req.passphrase = _passphrase;
     next();

@@ -3,6 +3,5 @@
     "serviceName": "Bridge Protocol Integration Service",
     "passportFile": "",
     "passportPassphrase": "",
-    "securityHeaderValue": "",
-    "bridgeApiBaseUrl": "https://bridgeprotocol.azurewebsites.net/api/"
+    "securityHeaderValue": ""
 }
