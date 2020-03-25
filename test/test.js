@@ -132,12 +132,43 @@ async function Init(){
     console.log("");
 
     let neoWallet = passport.getWalletForNetwork("neo");
+    await neoWallet.unlock(_password);
+
     let ethWallet = passport.getWalletForNetwork("eth");
+    await ethWallet.unlock(_password);
+
     let claim = await passport.getDecryptedClaim("3", _password);
 
-    console.log("- Verify blockchain payment - /blockchain/verifypayment");
-    let verifiedPayment = await callEndpoint("/blockchain/verifypayment", { network: neoWallet.network, txid: "12345", from: neoWallet.address, to: neoWallet.address, amount: 1, identifier:"12345" });
-    console.log(JSON.stringify(verifiedPayment));
+    console.log("- Create NEO blockchain payment - /blockchain/sendpayment");
+    let neoPayment = await callEndpoint("/blockchain/sendpayment", { network: neoWallet.network, to: neoWallet.address, amount: 1, identifier:"12345" });
+    console.log(neoPayment.response);
+    console.log("");
+
+    console.log("- Create ETH blockchain payment - /blockchain/sendpayment");
+    let ethPayment = await callEndpoint("/blockchain/sendpayment", { network: ethWallet.network, to: ethWallet.address, amount: 1, identifier:"12345" });
+    console.log(ethPayment.response);
+    console.log("");
+
+    console.log("- Get service NEO address - /blockchain/walletaddress");
+    let serviceNeoAddress = await callEndpoint("/blockchain/walletaddress", { network: "neo" });
+    serviceNeoAddress = serviceNeoAddress.response;
+    console.log(serviceNeoAddress);
+    console.log("");
+
+    console.log("- Get service ETH address - /blockchain/walletaddress");
+    let serviceEthAddress = await callEndpoint("/blockchain/walletaddress", { network: "eth" });
+    serviceEthAddress = serviceEthAddress.response;
+    console.log(serviceEthAddress);
+    console.log("");
+
+    console.log("- Verify NEO blockchain payment - /blockchain/verifypayment");
+    let verifiedNeoPayment = await callEndpoint("/blockchain/verifypayment", { network: neoWallet.network, txid: "9ade7b3e8f5e4d34ecf9b322b368fdd07a253f79a6e01a5085e14f51581c4268", from: serviceNeoAddress, to: neoWallet.address, amount: 1, identifier:"123425" });
+    console.log(JSON.stringify(verifiedNeoPayment.response));
+    console.log("");
+
+    console.log("- Verify ETH blockchain payment - /blockchain/verifypayment");
+    let verifiedEthPayment = await callEndpoint("/blockchain/verifypayment", { network: ethWallet.network, txid: "0x9b79255830eb2d56b0add69046394dcbb7a919385a8335d45ac6094134cad468", from: serviceEthAddress, to: ethWallet.address, amount: 1, identifier:"123425" });
+    console.log(JSON.stringify(verifiedEthPayment.response));
     console.log("");
 
     console.log("- Create NEO claim publish transaction - /blockchain/createclaimpublish");

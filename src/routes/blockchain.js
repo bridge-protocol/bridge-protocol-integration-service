@@ -2,8 +2,68 @@ var express = require('express');
 var router = express.Router();
 
 //Sub-routes
+router.post("/walletaddress", post_walletAddress);
+router.post("/sendpayment", post_sendPayment);
 router.post("/verifypayment", post_verifyPayment);
 router.post("/approveclaimpublish", post_approveClaimPublish);
+
+async function post_walletAddress(req, res, next){
+  let error = null;
+  let response = null;
+
+  try {
+    if (!req.body) {
+      throw new Error("Message body was null.");
+    }
+    if(!req.body.network){
+      throw new Error("Missing parameter: network");
+    }
+
+    let wallet = await req.passport.getWalletForNetwork(req.body.network);
+    if(wallet)
+      response = wallet.address;
+  }
+  catch (err) {
+    error = err.message;
+  }
+
+  return res.json({ response, error });
+}
+
+async function post_sendPayment(req, res, next){
+  let error = null;
+  let response = null;
+
+  try {
+    if (!req.body) {
+      throw new Error("Message body was null.");
+    }
+    if(!req.body.network){
+      throw new Error("Missing parameter: network");
+    }
+    if(!req.body.to){
+      throw new Error("Missing parameter: to");
+    }
+    if(!req.body.amount) {
+      throw new Error("Missing parameter: amount");
+    }
+    if (!req.body.identifier) {
+      throw new Error("Missing parameter: identifier");
+    }
+
+    let wallet = await req.passport.getWalletForNetwork(req.body.network);
+    await wallet.unlock(req.passphrase);
+    if(!wallet || !wallet.unlocked)
+      throw new Error("Could not find or unlock " + req.body.network + " wallet");
+
+    response = await req.bridge.Services.Blockchain.sendPayment(wallet, req.body.amount, req.body.to, req.body.identifier, req.body.wait);
+  }
+  catch (err) {
+    error = err.message;
+  }
+
+  return res.json({ response, error });
+}
 
 async function post_verifyPayment(req, res, next) {
   let response = null;
