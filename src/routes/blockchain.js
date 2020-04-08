@@ -131,12 +131,28 @@ async function post_approveClaimPublish(req, res, next) {
     }
 
     let wallet = await req.passport.getWalletForNetwork(req.body.network);
+
+    //For ethereum we need to be sure we were paid for the publish
+    if(req.body.network.toLowerCase() === "eth"){
+      if(!req.body.transactionId){
+        throw new Error("Missing parameter: transactionId")
+      }
+
+      //Get the publish approve cost
+      let approveCost = await req.bridge.Services.Blockchain.approveClaimPublish(wallet, req.body.address, claim, req.body.hashOnly, true);
+      
+      //Verify we've been paid for the publish
+      let paid = await req.bridge.Services.Blockchain.verifyGasTransfer(req.body.network, req.body.transactionId, req.body.address, req.bridge.Constants.bridgeEthereumAddress, approveCost, claim.identifier);
+      if(!paid)
+        throw new Error("Could not verify gas payment transaction.");
+    }
+
     await wallet.unlock(req.passphrase);
     if(!wallet || !wallet.unlocked)
       throw new Error("Could not find or unlock " + req.body.network + " wallet");
 
     //If the claim is valid, give them a claim to publish
-    response = await req.bridge.Services.Blockchain.approveClaimPublish(wallet, req.body.address, claim, req.body.hashOnly)
+    response = await req.bridge.Services.Blockchain.approveClaimPublish(wallet, req.body.address, claim, req.body.hashOnly);
   }
   catch (err) {
     error = err.message;
