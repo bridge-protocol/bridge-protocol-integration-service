@@ -1,12 +1,12 @@
 {
   "name": "bridge-protocol-integration-service",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "private": true,
   "scripts": {
     "start": "node ./bin/www"
   },
   "dependencies": {
-    "@bridge-protocol/bridge-protocol-js": "^3.0.0",
+    "@bridge-protocol/bridge-protocol-js": "^3.0.1",
     "node-fetch": "^2.3.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
