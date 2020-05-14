@@ -5,7 +5,7 @@ var router = express.Router();
 router.post("/walletaddress", post_walletAddress);
 router.post("/sendpayment", post_sendPayment);
 router.post("/verifypayment", post_verifyPayment);
-router.post("/approveclaimpublish", post_approveClaimPublish);
+router.post("/createpublishtx", post_createClaimPublishTransaction);
 
 async function post_walletAddress(req, res, next){
   let error = null;
@@ -103,20 +103,13 @@ async function post_verifyPayment(req, res, next) {
 
 //Bridge Use Only.  Smart Contract will only accept Transactions from Bridge Addresses
 //For NEO we create a transaction to be signed by the user and relayed by them
-//For ETH we execute a transaction to approve the publish after they already sent a publish transaction
-async function post_approveClaimPublish(req, res, next) {
+async function post_createClaimPublishTransaction(req, res, next) {
   let error = null;
   let response = null;
 
   try {
     if (!req.body) {
       throw new Error("Message body was null.");
-    }
-    if(!req.body.network){
-      throw new Error("Missing parameter: network");
-    }
-    if(!req.body.passportId){
-      throw new Error("Missing parameter: passportId");
     }
     if(!req.body.address){
       throw new Error("Missing parameter: address");
@@ -125,34 +118,12 @@ async function post_approveClaimPublish(req, res, next) {
       throw new Error("Missing parameter: claim");
     }
 
-    let claim = new req.bridge.Models.Claim(req.body.claim);
-    if (!claim.verifySignature(req.body.passportId)) {
-      throw new Error("Claim signature verification failed.");
-    }
-
-    let wallet = await req.passport.getWalletForNetwork(req.body.network);
-
-    //For ethereum we need to be sure we were paid for the publish
-    if(req.body.network.toLowerCase() === "eth"){
-      if(!req.body.transactionId){
-        throw new Error("Missing parameter: transactionId")
-      }
-
-      //Get the publish approve cost
-      let approveCost = await req.bridge.Services.Blockchain.approveClaimPublish(wallet, req.body.address, claim, req.body.hashOnly, true);
-      
-      //Verify we've been paid for the publish
-      let paid = await req.bridge.Services.Blockchain.verifyGasTransfer(req.body.network, req.body.transactionId, req.body.address, req.bridge.Constants.bridgeEthereumAddress, approveCost, claim.identifier);
-      if(!paid)
-        throw new Error("Could not verify gas payment transaction.");
-    }
-
+    let wallet = await req.passport.getWalletForNetwork("neo");
     await wallet.unlock(req.passphrase);
     if(!wallet || !wallet.unlocked)
-      throw new Error("Could not find or unlock " + req.body.network + " wallet");
+      throw new Error("Could not find or unlock NEO wallet");
 
-    //If the claim is valid, give them a claim to publish
-    response = await req.bridge.Services.Blockchain.approveClaimPublish(wallet, req.body.address, claim, req.body.hashOnly);
+    response = await req.bridge.Services.Blockchain.createClaimPublishTransaction(wallet, req.body.address, claim, req.body.hashOnly);
   }
   catch (err) {
     error = err.message;

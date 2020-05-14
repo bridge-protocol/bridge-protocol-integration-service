@@ -17,6 +17,7 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var passportRouter = require('./routes/passport');
 var blockchainRouter = require('./routes/blockchain');
+var claimRouter = require('./routes/claim');
 
 var app = express();
 
@@ -50,6 +51,7 @@ app.use(function (req, res, next) {
 app.use('/', indexRouter);
 app.use('/passport', passportRouter);
 app.use('/blockchain', blockchainRouter);
+app.use('/claim', claimRouter);
 
 // Catch 404 and forward to error handler if the request is to a route we aren't handling
 app.use(function (req, res, next) {
