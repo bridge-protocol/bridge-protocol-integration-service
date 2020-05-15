@@ -170,16 +170,6 @@ async function Init(){
     let verifiedEthPayment = await callEndpoint("/blockchain/verifypayment", { network: ethWallet.network, txid: "0x9b79255830eb2d56b0add69046394dcbb7a919385a8335d45ac6094134cad468", from: serviceEthAddress, to: ethWallet.address, amount: 1, identifier:"123425" });
     console.log(JSON.stringify(verifiedEthPayment.response));
     console.log("");
-
-    console.log("- Create NEO claim publish transaction - /blockchain/createclaimpublish");
-    let claimPublishTransaction = await callEndpoint("/blockchain/createclaimpublish", { network: neoWallet.network, passportId: passport.id, address: neoWallet.address, claim});
-    console.log(JSON.stringify(claimPublishTransaction, ));
-    console.log("");
-
-    console.log("- Approve ETH claim publish transaction - /blockchain/createclaimpublish");
-    let claimPublishApprove = await callEndpoint("/blockchain/approveclaimpublish", { network: ethWallet.network, passportId: passport.id, address: ethWallet.address, claim});
-    console.log(JSON.stringify(claimPublishApprove));
-    console.log("");
 }
 
 async function callEndpoint(path, data){

@@ -123,7 +123,7 @@ async function post_createClaimPublishTransaction(req, res, next) {
     if(!wallet || !wallet.unlocked)
       throw new Error("Could not find or unlock NEO wallet");
 
-    response = await req.bridge.Services.Blockchain.createClaimPublishTransaction(wallet, req.body.address, claim, req.body.hashOnly);
+    response = await req.bridge.Services.Blockchain.createClaimPublishTransaction(wallet, req.body.address, req.body.claim, req.body.hashOnly);
   }
   catch (err) {
     error = err.message;
