@@ -1,6 +1,6 @@
 {
   "name": "bridge-protocol-integration-service",
-  "version": "3.0.21",
+  "version": "3.1.0",
   "private": true,
   "scripts": {
     "start": "node ./bin/www"
